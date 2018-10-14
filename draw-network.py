@@ -23,6 +23,12 @@ def run():
     dot = model_to_dot(model)
     dot.write(str(args.output), format=args.output.suffix.lstrip('.'))
 
+def comps_as_string(layer):
+    comps = layer['components']
+    dims = [(c,len(x['bias'])) for c, x in comps.items()]
+    assert all(d[1] == dims[0][1] for d in dims)
+    return str(dims[0][1])
+
 def model_to_dot(model,
                  rankdir='TB'):
     """I stole this from Keras, then hacked
@@ -41,22 +47,31 @@ def model_to_dot(model,
     # Create graph nodes.
     for num, lwtnn_node in enumerate(nodes):
         layer_type = lwtnn_node['type']
+        shape = 'ellipse'
         if layer_type in ['feed_forward', 'time_distributed', 'sequence']:
             layer = layers[lwtnn_node['layer_index']]
             label = layer['architecture']
             if label == 'dense':
-                label += '\n {}'.format(layer['activation'])
+                if layer['bias']:
+                    label += ' ({})'.format(len(layer['bias']))
+                    label += '\n {}'.format(layer['activation'])
+                else:
+                    label = layer['activation']
+            elif label in ['lstm', 'gru']:
+                label += ' ({})'.format(comps_as_string(layer))
         elif layer_type == 'input':
+            shape = 'rectangle'
             in_node = model['inputs'][lwtnn_node['sources'][0]]
             label = '{}\n({})'.format(
                 in_node['name'], len(in_node['variables']))
         elif layer_type == 'input_sequence':
+            shape = 'rectangle'
             in_node = model['input_sequences'][lwtnn_node['sources'][0]]
             label = '{}\n({})'.format(
                 in_node['name'], len(in_node['variables']))
         else:
             label = layer_type
-        dot_node = pydot.Node(str(num), label=label)
+        dot_node = pydot.Node(str(num), label=label, shape=shape)
         dot.add_node(dot_node)
 
     # Connect nodes with edges.
@@ -66,6 +81,15 @@ def model_to_dot(model,
         for source_node in node['sources']:
 
             dot.add_edge(pydot.Edge(str(source_node), str(dest_node)))
+
+    # add outputs
+    for output_node in model['outputs'].values():
+        source = output_node['node_index']
+        for lab in output_node['labels']:
+            out_name = f'out_{source}_{lab}'
+            dot.add_node(pydot.Node(out_name, label=lab))
+            dot.add_edge(pydot.Edge(str(source), out_name))
+
     return dot
 
 if __name__ == '__main__':
