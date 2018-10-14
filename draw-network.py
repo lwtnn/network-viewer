@@ -4,13 +4,18 @@
 Draw a model from lwtnn
 """
 
+_epilogue = """NOTE:
+Right now this only supports the graph models, but you can convert
+sequential models to graph models with `sequential2graph.py`
+"""
+
 import pydot_ng as pydot
 from argparse import ArgumentParser
 from pathlib import Path
 import json
 
 def get_args():
-    parser = ArgumentParser(description=__doc__)
+    parser = ArgumentParser(description=__doc__, epilog=_epilogue)
     parser.add_argument('model')
     parser.add_argument('-o','--output', default='model_graph.pdf',
                         type=Path)
