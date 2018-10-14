@@ -35,6 +35,13 @@ def comps_as_string(layer):
     assert all(d[1] == dims[0][1] for d in dims)
     return str(dims[0][1])
 
+def str_from_activation(layer):
+    act = layer['activation']
+    try:
+        return act['function']
+    except TypeError:
+        return act
+
 def model_to_dot(model,
                  rankdir='TB'):
     """I stole this from Keras, then hacked
@@ -60,9 +67,9 @@ def model_to_dot(model,
             if label == 'dense':
                 if layer['bias']:
                     label += ' ({})'.format(len(layer['bias']))
-                    label += '\n {}'.format(layer['activation'])
+                    label += '\n {}'.format(str_from_activation(layer))
                 else:
-                    label = layer['activation']
+                    label = str_from_activation(layer)
             elif label in ['lstm', 'gru']:
                 label += ' ({})'.format(comps_as_string(layer))
         elif layer_type == 'input':
