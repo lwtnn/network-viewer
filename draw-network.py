@@ -27,6 +27,7 @@ def run():
     with open(args.model) as model_file:
         model = json.load(model_file)
     dot = model_to_dot(model)
+    add_outputs(dot, model, args.max_out_nodes)
     dot.write(str(args.output), format=args.output.suffix.lstrip('.'))
 
 def comps_as_string(layer):
@@ -95,10 +96,14 @@ def model_to_dot(model,
 
             dot.add_edge(pydot.Edge(str(source_node), str(dest_node)))
 
+    return dot
+
+def add_outputs(dot, model, max_outputs):
+
     # add outputs
     for node_name, output_node in model['outputs'].items():
         source = output_node['node_index']
-        if len(output_node['labels']) > args.max_out_nodes:
+        if len(output_node['labels']) > max_outputs:
             lab = node_name
             num = len(output_node['labels'])
             out_name = f'out_{source}_{lab}'
