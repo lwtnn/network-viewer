@@ -19,6 +19,7 @@ def get_args():
     parser.add_argument('model')
     parser.add_argument('-o','--output', default='model_graph.pdf',
                         type=Path)
+    parser.add_argument('-m', '--max-out-nodes', type=int, default=5)
     return parser.parse_args()
 
 def run():
@@ -88,12 +89,19 @@ def model_to_dot(model,
             dot.add_edge(pydot.Edge(str(source_node), str(dest_node)))
 
     # add outputs
-    for output_node in model['outputs'].values():
+    for node_name, output_node in model['outputs'].items():
         source = output_node['node_index']
-        for lab in output_node['labels']:
+        if len(output_node['labels']) > args.max_out_nodes:
+            lab = node_name
+            num = len(output_node['labels'])
             out_name = f'out_{source}_{lab}'
-            dot.add_node(pydot.Node(out_name, label=lab))
+            dot.add_node(pydot.Node(out_name, label=lab + f'({num})'))
             dot.add_edge(pydot.Edge(str(source), out_name))
+        else:
+            for lab in output_node['labels']:
+                out_name = f'out_{source}_{lab}'
+                dot.add_node(pydot.Node(out_name, label=lab))
+                dot.add_edge(pydot.Edge(str(source), out_name))
 
     return dot
 
