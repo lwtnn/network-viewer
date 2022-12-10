@@ -20,13 +20,14 @@ def get_args():
     parser.add_argument('-o','--output', default='model_graph.pdf',
                         type=Path)
     parser.add_argument('-m', '--max-out-nodes', type=int, default=5)
+    parser.add_argument('-z', '--horizontal', action='store_true')
     return parser.parse_args()
 
 def run():
     args = get_args()
     with open(args.model) as model_file:
         model = json.load(model_file)
-    dot = model_to_dot(model)
+    dot = model_to_dot(model, rankdir='LR' if args.horizontal else 'TB')
     add_outputs(dot, model, args.max_out_nodes)
     dot.write(str(args.output), format=args.output.suffix.lstrip('.'))
 
